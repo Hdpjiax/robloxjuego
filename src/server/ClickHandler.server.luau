@@ -1,5 +1,4 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 
 local doClickEvent = ReplicatedStorage:FindFirstChild("DoClick") or Instance.new("RemoteEvent")
 doClickEvent.Name = "DoClick"
@@ -9,22 +8,16 @@ local lastClick = {}
 
 doClickEvent.OnServerEvent:Connect(function(player)
 local now = os.clock()
-if lastClick[player.UserId] and (now - lastClick[player.UserId]) < 0.1 then
-return
-end
+if lastClick[player.UserId] and (now - lastClick[player.UserId]) < 0.08 then return end
 lastClick[player.UserId] = now
 
 local leaderstats = player:FindFirstChild("leaderstats")
 if not leaderstats then return end
-
-local monedas = leaderstats:FindFirstChild("Monedas")
-local fuerza = leaderstats:FindFirstChild("Fuerza")
+local poder = leaderstats:FindFirstChild("Poder")
 local rebirths = leaderstats:FindFirstChild("Rebirths")
-if not (monedas and fuerza and rebirths) then return end
+if not (poder and rebirths) then return end
 
-local zoneConfig = GameConfig.ZONES[1]
-local gain = 1 * zoneConfig.multiplier * (1 + rebirths.Value * 0.5)
-
-monedas.Value += gain
-fuerza.Value += gain
+local multPuesto = player:GetAttribute("MultPuesto") or 1
+local gain = 1 * multPuesto * (1 + rebirths.Value * 0.5)
+poder.Value += gain
 end)
