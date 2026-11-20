@@ -1,60 +1,23 @@
-local DataStoreService = game:GetService("DataStoreService")
-local Players = game:GetService("Players")
+local DSS, Players = game:GetService("DataStoreService"), game:GetService("Players")
+local okS, DS = pcall(function() return DSS:GetDataStore("WizardSim_v1") end)
 
-local okStore, PlayerDataStore = pcall(function()
-return DataStoreService:GetDataStore("WizardSim_v1")
-end)
-
-local function savePlayerData(player)
-if not okStore or not PlayerDataStore then return end
-local leaderstats = player:FindFirstChild("leaderstats")
-if not leaderstats then return end
-local data = {
-Poder = leaderstats.Poder.Value,
-Monedas = leaderstats.Monedas.Value,
-Rebirths = leaderstats.Rebirths.Value,
-}
-pcall(function()
-PlayerDataStore:SetAsync(tostring(player.UserId), data)
-end)
+local function save(p)
+    if not okS or not DS then return end
+    local ls = p:FindFirstChild("leaderstats")
+    if ls then pcall(function() DS:SetAsync(tostring(p.UserId), {Poder=ls.Poder.Value, Monedas=ls.Monedas.Value, Rebirths=ls.Rebirths.Value}) end) end
 end
 
-Players.PlayerAdded:Connect(function(player)
-local leaderstats = Instance.new("Folder")
-leaderstats.Name = "leaderstats"
-leaderstats.Parent = player
-
-local poder = Instance.new("NumberValue")
-poder.Name = "Poder"
-poder.Value = 0
-poder.Parent = leaderstats
-
-local monedas = Instance.new("NumberValue")
-monedas.Name = "Monedas"
-monedas.Value = 0
-monedas.Parent = leaderstats
-
-local rebirths = Instance.new("NumberValue")
-rebirths.Name = "Rebirths"
-rebirths.Value = 0
-rebirths.Parent = leaderstats
-
-player:SetAttribute("BastonEquipado", "Vara de Aprendiz")
-player:SetAttribute("MultPuesto", 1)
-
-if okStore and PlayerDataStore then
-local ok, saved = pcall(function()
-return PlayerDataStore:GetAsync(tostring(player.UserId))
+Players.PlayerAdded:Connect(function(p)
+    local ls = Instance.new("Folder", p); ls.Name = "leaderstats"
+    local pod = Instance.new("NumberValue", ls); pod.Name = "Poder"
+    local mon = Instance.new("NumberValue", ls); mon.Name = "Monedas"
+    local reb = Instance.new("NumberValue", ls); reb.Name = "Rebirths"
+    p:SetAttribute("BastonEquipado", "Vara de Aprendiz")
+    p:SetAttribute("MultPuesto", 1)
+    if okS and DS then
+        local ok, d = pcall(function() return DS:GetAsync(tostring(p.UserId)) end)
+        if ok and type(d) == "table" then pod.Value = d.Poder or 0; mon.Value = d.Monedas or 0; reb.Value = d.Rebirths or 0 end
+    end
 end)
-if ok and type(saved) == "table" then
-poder.Value = saved.Poder or 0
-monedas.Value = saved.Monedas or 0
-rebirths.Value = saved.Rebirths or 0
-end
-end
-end)
-
-Players.PlayerRemoving:Connect(savePlayerData)
-game:BindToClose(function()
-for _, p in ipairs(Players:GetPlayers()) do savePlayerData(p) end
-end)
+Players.PlayerRemoving:Connect(save)
+game:BindToClose(function() for _, p in ipairs(Players:GetPlayers()) do save(p) end end)
